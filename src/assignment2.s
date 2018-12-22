@@ -68,7 +68,7 @@ loopa:
 
       addi  $s1, $s1, 4
       addi  $s0, $s0, -1
-      bne   $s0, $zero, loopa
+      blt   $zero, $s0, loopa
 
       lw    $v0, 8($sp)
       lw    $s1, 4($sp)
@@ -88,7 +88,7 @@ loopb:
       add   $s1, $s1, $s0
       addi  $a0, $a0, 4
       addi  $a1, $a1, -1
-      bne   $a1, $zero, loopb
+      blt   $zero, $a1, loopb
 
       move  $v0, $s1
       lw    $s1, 4($sp)

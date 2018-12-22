@@ -2,7 +2,7 @@
 \usepackage{amsmath}
 \usepackage{listings}
 \lstset{
-  basicstyle={\ttfamily\normalsize},
+  basicstyle={\ttfamily},
 }
 
 \renewcommand{\lstlistingname}{プログラム}
@@ -30,7 +30,7 @@ main:
 
     li    $s0, 0            # $s0 に初期値を設定
                             # $s0 は結果の記録
-      li    $s1, 0          # $s1 に初期値を設定
+    li    $s1, 0            # $s1 に初期値を設定
                             # $s1 はループ回数の記録
 loop:
     jal   read1bit          # サブルーチンの呼び出し
@@ -55,6 +55,7 @@ read1bit:
     syscall                 # 入力値を読み込み
     jr    $ra               # サブルーチン終了
     \end{lstlisting}
+    課題２はcallee-saveで実装しました。
     \begin{lstlisting}[caption=assignment2.s]
     .data                   # data の設定
 cnt:                        # 配列の要素数を入力させる
@@ -66,11 +67,7 @@ sum:                        # 配列の要素の和を出力
 
     .text
 main:
-    addi  $sp, $sp, -8      # レジスタの退避領域作成
-    sw    $ra, 0($sp)       # $ra を退避
-    sw    $s0, 4($sp)       # $s0 を退避
-
-    li    $s0, 0            # $s0 に初期値を設定
+          ~ 退避の部分により省略 ~
 
     li    $v0, 4
     la    $a0, cnt
@@ -85,73 +82,62 @@ main:
     syscall                 # 文字列 array を表示
 
     move  $a0, $s0          # サブルーチンの引数を設定
-    jal   create_array      # サブルーチンの呼び出し
+    jal   create_array      # $a0 は配列の要素数
 
-    move  $a0, $v0
-    move  $a1, $s0
-    jal   calc_sum
-    move  $s0, $v0
+    move  $a0, $v0          # create_array の戻り値を
+                            # calc_sum の引数に設定
+                            # $a0 は配列の先頭アドレス
+    move  $a1, $s0          # 引数を設定
+    jal   calc_sum          # $a1 は配列の要素数
+    move  $s0, $v0          # calc_sum の結果を代入
 
     li    $v0, 1
     move  $a0, $s0
-    syscall
+    syscall                 # 配列の和を表示
 
     li    $v0, 4
     la    $a0, sum
-    syscall
+    syscall                 # 文字列 sum を表示
 
-    lw    $s0, 4($sp)
-    lw    $ra, 0($sp)
-    addi  $sp, $sp, 8
-    jr    $ra
+          ~ 復帰の部分により省略 ~
 
 create_array:
-    addi  $sp, $sp, -12
-    sw    $s0, 0($sp)
-    sw    $s1, 4($sp)
-
-    move  $s0, $a0
+          ~ 退避の部分により省略 ~
+    move  $s0, $a0          # $s0 は残りのループ回数を記録
 
     li    $v0, 9
     add   $a0, $a0, $a0
-    add   $a0, $a0, $a0
-    syscall
-    move  $s1, $v0
+    add   $a0, $a0, $a0     # 要素数 * 4 Byte
+    syscall                 # メモリの確保
+    move  $s1, $v0          # メモリの先頭アドレス
 
-    sw    $v0, 8($sp)
+    sw    $v0, 8($sp)       # 先頭アドレスを記憶
 loopa:
     li    $v0, 5
-    syscall
-    sw    $v0, 0($s1)
+    syscall                 # 入力値を読み込み
+    sw    $v0, 0($s1)       # 入力値を配列に追加
 
-    addi  $s1, $s1, 4
-    addi  $s0, $s0, -1
-    bne   $s0, $zero, loopa
+    addi  $s1, $s1, 4       # 次の要素が入るメモリ
+    addi  $s0, $s0, -1      # 残りのループ回数を減らす
+    blt   $zero, $s0, loopa # ループするか判定
 
-    lw    $v0, 8($sp)
-    lw    $s1, 4($sp)
-    lw    $s0, 0($sp)
-    addi  $sp, $sp, 12
+          ~ 復帰の部分により省略 ~
     jr    $ra
 
 calc_sum:
-    addi  $sp, $sp, -8
-    sw    $s0, 0($sp)
-    sw    $s1, 4($sp)
+          ~ 退避の部分により省略 ~
 
-    li    $s0, 0
-    li    $s1, 0
+    li    $s0, 0            # $s0 は配列の要素を読み込む
+    li    $s1, 0            # $s1 はそれまでの和
 loopb:
-    lw    $s0, 0($a0)
-    add   $s1, $s1, $s0
-    addi  $a0, $a0, 4
-    addi  $a1, $a1, -1
-    bne   $a1, $zero, loopb
+    lw    $s0, 0($a0)       # $s0 に要素を呼び出す
+    add   $s1, $s1, $s0     # $s0 に $s1 を足す
+    addi  $a0, $a0, 4       # 次の要素があるアドレス
+    addi  $a1, $a1, -1      # 残りのループ回数
+    blt   $zero, $a1, loopb # ループするか判定
 
-    move  $v0, $s1
-    lw    $s1, 4($sp)
-    lw    $s0, 0($sp)
-    addi  $sp, $sp, 8
+    move  $v0, $s1          # 戻り値に結果を代入
+          ~ 復帰の部分により省略 ~
     jr    $ra
     \end{lstlisting}
   \section{実行結果}
