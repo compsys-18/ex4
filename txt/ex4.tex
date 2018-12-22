@@ -1,4 +1,11 @@
 \documentclass{jarticle}
+\usepackage{amsmath}
+\usepackage{listings}
+\lstset{
+  basicstyle={\ttfamily\normalsize},
+}
+
+\renewcommand{\lstlistingname}{プログラム}
 
 \title{計算機システム演習　第４回レポート}
 \author{17B13541 \and 細木隆豊}
@@ -7,7 +14,146 @@
 \begin{document}
 \maketitle
   \section{課題１の議論}
+    caller-saveでは、サブルーチンを１回呼び出すのでレジスタの退避・復帰を１回行う。
+
+    callee-saveでは、今回のサブルーチンread1bitで\$s0, \$s1は使われないため、read1bitでレジスタを退避・復帰しなくて良い。mainルーチンでは\$s0, \$s1を使うので、退避・復帰をする。よって、callee-saveでの退避・復帰は１回である。
+
+    以上から、今回の２進１０進変換プログラムではレジスタの退避・復帰回数はどちらも１回であるから、コードの効率の違いは生まれないと考えられる。
   \section{説明・工夫}
+    \begin{lstlisting}[caption=assignment1.s]
+    .text
+main:
+    addi  $sp, $sp, -12     # レジスタの退避領域作成
+    sw    $ra, 0($sp)       # $ra を退避
+    sw    $s0, 4($sp)       # $s0 を退避
+    sw    $s1, 8($sp)       # $s1 を退避
+
+    li    $s0, 0            # $s0 に初期値を設定
+                            # $s0 は結果の記録
+      li    $s1, 0          # $s1 に初期値を設定
+                            # $s1 はループ回数の記録
+loop:
+    jal   read1bit          # サブルーチンの呼び出し
+
+    add   $s0, $s0, $s0     # 今までの結果を２倍
+    add   $s0, $s0, $v0     # 入力値を足す
+    addi  $s1, $s1, 1       # ループ回数に１足す
+    blt   $s1, 8, loop      # ループ回数を比較
+
+    move  $a0, $s0
+    li    $v0, 1
+    syscall                 # 結果を表示
+
+    lw    $ra, 0($sp)       # $ra を復帰
+    lw    $s0, 4($sp)       # $s0 を復帰
+    lw    $s1, 8($sp)       # $s1 を復帰
+    addi  $sp, $sp, 12      # 退避領域開放
+    jr    $ra               # main ルーチン終了
+
+read1bit:
+    li    $v0, 5
+    syscall                 # 入力値を読み込み
+    jr    $ra               # サブルーチン終了
+    \end{lstlisting}
+    \begin{lstlisting}[caption=assignment2.s]
+    .data                   # data の設定
+cnt:                        # 配列の要素数を入力させる
+    .asciiz "What is number of the array?-"
+array:                      # 配列の要素を入力させる
+    .asciiz "type elements of the array.\n"
+sum:                        # 配列の要素の和を出力
+    .asciiz " is the sum."
+
+    .text
+main:
+    addi  $sp, $sp, -8      # レジスタの退避領域作成
+    sw    $ra, 0($sp)       # $ra を退避
+    sw    $s0, 4($sp)       # $s0 を退避
+
+    li    $s0, 0            # $s0 に初期値を設定
+
+    li    $v0, 4
+    la    $a0, cnt
+    syscall                 # 文字列 cnt を表示
+
+    li    $v0, 5
+    syscall
+    move  $s0, $v0          # 配列の要素数を読み込み
+
+    li    $v0, 4
+    la    $a0, array
+    syscall                 # 文字列 array を表示
+
+    move  $a0, $s0          # サブルーチンの引数を設定
+    jal   create_array      # サブルーチンの呼び出し
+
+    move  $a0, $v0
+    move  $a1, $s0
+    jal   calc_sum
+    move  $s0, $v0
+
+    li    $v0, 1
+    move  $a0, $s0
+    syscall
+
+    li    $v0, 4
+    la    $a0, sum
+    syscall
+
+    lw    $s0, 4($sp)
+    lw    $ra, 0($sp)
+    addi  $sp, $sp, 8
+    jr    $ra
+
+create_array:
+    addi  $sp, $sp, -12
+    sw    $s0, 0($sp)
+    sw    $s1, 4($sp)
+
+    move  $s0, $a0
+
+    li    $v0, 9
+    add   $a0, $a0, $a0
+    add   $a0, $a0, $a0
+    syscall
+    move  $s1, $v0
+
+    sw    $v0, 8($sp)
+loopa:
+    li    $v0, 5
+    syscall
+    sw    $v0, 0($s1)
+
+    addi  $s1, $s1, 4
+    addi  $s0, $s0, -1
+    bne   $s0, $zero, loopa
+
+    lw    $v0, 8($sp)
+    lw    $s1, 4($sp)
+    lw    $s0, 0($sp)
+    addi  $sp, $sp, 12
+    jr    $ra
+
+calc_sum:
+    addi  $sp, $sp, -8
+    sw    $s0, 0($sp)
+    sw    $s1, 4($sp)
+
+    li    $s0, 0
+    li    $s1, 0
+loopb:
+    lw    $s0, 0($a0)
+    add   $s1, $s1, $s0
+    addi  $a0, $a0, 4
+    addi  $a1, $a1, -1
+    bne   $a1, $zero, loopb
+
+    move  $v0, $s1
+    lw    $s1, 4($sp)
+    lw    $s0, 0($sp)
+    addi  $sp, $sp, 8
+    jr    $ra
+    \end{lstlisting}
   \section{実行結果}
   \section{感想・質問}
 \end{document}
