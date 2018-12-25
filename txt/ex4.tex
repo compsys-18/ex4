@@ -3,6 +3,7 @@
 \usepackage{listings}
 \lstset{
   basicstyle={\ttfamily},
+  frame={tb}
 }
 
 \renewcommand{\lstlistingname}{プログラム}
@@ -18,7 +19,7 @@
 
     callee-saveでは、今回のサブルーチンread1bitで\$s0, \$s1は使われないため、read1bitでレジスタを退避・復帰しなくて良い。mainルーチンでは\$s0, \$s1を使うので、退避・復帰をする。よって、callee-saveでの退避・復帰は１回である。
 
-    以上から、今回の２進１０進変換プログラムではレジスタの退避・復帰回数はどちらも１回であるから、コードの効率の違いは生まれないと考えられる。
+    以上から、今回の２進１０進変換プログラムではレジスタの退避・復帰回数はどちらも１回であるから、コードの効率の違いは生まれないと考えられる。ただread1bitで\$t0, \$t1を使わないために退避・復帰する必要がなく、callee-saveの方が有効だと考えられる。
   \section{説明・工夫}
     \begin{lstlisting}[caption=assignment1.s]
     .text
@@ -55,7 +56,7 @@ read1bit:
     syscall                 # 入力値を読み込み
     jr    $ra               # サブルーチン終了
     \end{lstlisting}
-    課題２はcallee-saveで実装しました。
+
     \begin{lstlisting}[caption=assignment2.s]
     .data                   # data の設定
 cnt:                        # 配列の要素数を入力させる
@@ -140,6 +141,58 @@ loopb:
           ~ 復帰の部分により省略 ~
     jr    $ra
     \end{lstlisting}
+    課題２はcallee-saveで実装しました。
   \section{実行結果}
+    assignment1.s
+    \begin{lstlisting}
+      1
+      1
+      0
+      0
+      1
+      1
+      0
+      0
+      204
+    \end{lstlisting}
+    \begin{lstlisting}
+      1
+      0
+      0
+      0
+      0
+      0
+      0
+      0
+      128
+    \end{lstlisting}
+
+    assignment2.s
+    \begin{lstlisting}
+      What is number of the array?-5
+      type elements of the array.
+      1
+      2
+      3
+      4
+      5
+      15 is the sum.
+    \end{lstlisting}
+    \begin{lstlisting}
+      What is number of the array?-10
+      type elements of the array.
+      1
+      2
+      3
+      4
+      5
+      6
+      7
+      8
+      9
+      10
+      55 is the sum.
+    \end{lstlisting}
   \section{感想・質問}
+  難しかったが、理解できたので大変良かった。
 \end{document}
