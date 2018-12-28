@@ -15,11 +15,11 @@
 \begin{document}
 \maketitle
   \section{課題１の議論}
-    caller-saveでは、サブルーチンを１回呼び出すのでレジスタの退避・復帰を１回行う。
+    caller-saveでは、サブルーチンをループによって計８回呼び出すのでレジスタの退避・復帰を８回行う。
 
     callee-saveでは、今回のサブルーチンread1bitで\$s0, \$s1は使われないため、read1bitでレジスタを退避・復帰しなくて良い。mainルーチンでは\$s0, \$s1を使うので、退避・復帰をする。よって、callee-saveでの退避・復帰は１回である。
 
-    以上から、今回の２進１０進変換プログラムではレジスタの退避・復帰回数はどちらも１回であるから、コードの効率の違いは生まれないと考えられる。ただread1bitで\$t0, \$t1を使わないために退避・復帰する必要がなく、callee-saveの方が有効だと考えられる。
+    以上から、今回の２進１０進変換プログラムではレジスタの退避・復帰回数はcaller-saveとcallee-saveで大きく異なり、callee-saveを方が効率的である。
   \section{説明・工夫}
     \begin{lstlisting}[caption=assignment1.s]
     .text
@@ -195,4 +195,6 @@ loopb:
     \end{lstlisting}
   \section{感想・質問}
   難しかったが、理解できたので大変良かった。
+  
+  はじめ勘違いをしておりループの事を考えていなかったので、課題１の議論を間違えてしまいました。理解したうえで修正しました。
 \end{document}
